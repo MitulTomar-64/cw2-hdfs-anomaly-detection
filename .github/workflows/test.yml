@@ -22,6 +22,28 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        pip install azure-storage-blob
+    
+    - name: Download CSV from Azure
+      env:
+        AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+      run: |
+        python -c "
+        from azure.storage.blob import BlobClient
+        import os
+        
+        # Get connection string from GitHub Secrets
+        conn_str = os.environ['AZURE_STORAGE_CONNECTION_STRING']
+        
+        # Download file from Azure Blob Storage
+        blob = BlobClient.from_connection_string(conn_str, container_name='data', blob_name='final_structured_hdfs_logs-5.csv')
+        
+        # Save to current directory
+        with open('final_structured_hdfs_logs-5.csv', 'wb') as file:
+            file.write(blob.download_blob().readall())
+        
+        print('✓ CSV downloaded from Azure Blob Storage!')
+        "
     
     - name: Run data quality tests
       run: python -m pytest tests/test_data_quality.py -v
